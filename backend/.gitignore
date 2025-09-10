@@ -1,0 +1,19 @@
+# ===========================================
+# バックエンド固有設定
+# ===========================================
+
+# Rails specific
+log/*
+storage/*
+postgres_data/
+/config/master.key
+/db/*.sqlite3
+/db/*.sqlite3-journal
+
+# Bundler
+/.bundle
+
+# Rails specific PID files
+/tmp/pids/*
+!/tmp/pids/
+!/tmp/pids/.keep
