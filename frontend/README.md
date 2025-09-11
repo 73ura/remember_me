@@ -24,7 +24,7 @@
    cd remember_me/frontend
    ```
 
-2. **依存関係のインストール**
+2. **依存関係のインストール（初回のみ）**
    ```bash
    npm install
    ```

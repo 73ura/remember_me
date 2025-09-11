@@ -24,7 +24,7 @@
     ```bash
     docker-compose up -d
     ```
-3. データベース作成
+3. データベース作成（1.初回環境構築時 2. データベースを削除した後 3. データベース名を変更した場合DB ）
 
     ```bash
     docker-compose exec web ./bin/rails db:create
