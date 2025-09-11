@@ -20,6 +20,9 @@ RUN bundle config set --local path 'vendor/bundle' && bundle install
 # アプリケーションコードをコピー
 COPY . .
 
+# docker-entrypointスクリプトに実行権限を設定
+RUN chmod +x /rails/bin/docker-entrypoint
+
 EXPOSE 3000
 
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
