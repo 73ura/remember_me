@@ -34,6 +34,15 @@ out/
 # Vite cache
 .vite
 
+# Environment variables
+.env
+.env.front
+.env.back
+.env.all
+.env.development.local
+.env.test.local
+.env.production.local
+
 # Nuxt.js build / generate output
 .nuxt
 
