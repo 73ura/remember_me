@@ -1,7 +1,7 @@
 FROM ruby:3.3.0
 
 # Node.js 20.x LTS をインストール
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | sh - && \
     apt-get install -y nodejs
 
 # 必要なパッケージをインストール
@@ -20,8 +20,9 @@ RUN bundle config set --local path 'vendor/bundle' && bundle install
 # アプリケーションコードをコピー
 COPY . .
 
-# docker-entrypointスクリプトに実行権限を設定
+# 実行可能ファイルに実行権限を設定
 RUN chmod +x /rails/bin/docker-entrypoint
+RUN chmod +x /rails/bin/rails
 
 EXPOSE 3000
 
