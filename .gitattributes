@@ -1,0 +1,7 @@
+# 改行コードの制御設定
+# binファイルは常にLF（Unix形式）で管理
+backend/bin/* text eol=lf
+frontend/bin/* text eol=lf
+
+# その他のファイルは通常のautocrlf設定に従う
+* text=auto
