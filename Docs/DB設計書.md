@@ -151,7 +151,7 @@ ER図は`ER.dbml`形式で定義しています。以下のツールで表示・
 | カラム名 | 型 | 制約 | 説明 |
 |---------|---|------|------|
 | families_id | uuid | PK, 自動採番 | 家族ID |
-| name | varchar(100) | NOT NULL | 家族名 |
+| family_name | varchar(100) | NOT NULL | 家族名 |
 | created_by | uuid | NOT NULL | 作成者 |
 | updated_by | uuid | NOT NULL | 更新者 |
 | created_at | timestamp | NOT NULL | 作成日時 |
