@@ -70,6 +70,8 @@ Table family_members {
   family_members_id uuid [pk, default: `uuid_generate_v7()`, note: '家族メンバーのUUID(v7)はサーバー側で生成']
   users_id uuid [ref: > users.users_id, not null, note: 'どのユーザーがメンバーか（外部キー: users.users_id）']
   families_id uuid [ref: > families.families_id, not null, note: 'どの家族グループに所属か（外部キー: families.families_id）']
+  family_members_name varchar [not null, note: '家族の名前']
+  family_members_birth_date date [note: '家族の誕生日']
   
   // --- 監査情報 ---
   created_by uuid [not null, note: '作成者のアカウントID']

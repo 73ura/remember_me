@@ -171,7 +171,9 @@ ER図は`ER.dbml`形式で定義しています。以下のツールで表示・
 |---------|---|------|------|
 | family_members_id | uuid | PK, 自動採番 | 家族メンバーID |
 | users_id | uuid | FK, NOT NULL | ユーザーID（users.users_id参照） |
-| families_id | uuid | FK, NOT NULL | 家族ID（families.families_id参照） |
+| families_id | uuid | FK, NOT NULL | 家族ID（families.families_id参照）|
+| family_members_name | varchar(100) | NOT NULL | 家族の名前 |
+| family_members_birth_date | date | | 家族の誕生日 |
 | created_by | uuid | NOT NULL | 作成者 |
 | updated_by | uuid | NOT NULL | 更新者 |
 | created_at | timestamp | NOT NULL | 作成日時 |
