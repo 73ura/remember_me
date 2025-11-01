@@ -1,0 +1,161 @@
+// おぼえてて (remember_me) - データベーススキーマ
+// ER.dbml形式
+
+
+// ユーザー認証関連
+Table account {
+  account_id uuid [pk, default: `uuid_generate_v7()`, note: 'アカウントのUUID(v7)はサーバー側で生成']
+  email varchar(255) [unique, not null, note: 'ログイン用のメールアドレス']
+  password_hash varchar(255) [not null, note: 'パスワードのハッシュ値']
+
+  // --- 監査情報 ---
+  created_at timestamp [default: `now()`, note: 'アカウント作成日時']
+  created_by uuid [not null, note: '作成者のアカウントID']
+}
+
+Table user {
+  user_id uuid [pk, default: `uuid_generate_v7()`, note: 'アカウントのUUID(v7)はサーバー側で生成']
+  account_id uuid [unique, not null, note: '紐付くaccountのID']
+
+  // --- 基本情報 ---
+  last_name varchar(50) [not null, note: '姓']
+  first_name varchar(50) [not null, note: '名']
+  last_name_kana varchar(50) [not null, note: '姓（カナ）']
+  first_name_kana varchar(50) [not null, note: '名（カナ）']
+  username varchar(50) [not null, note: '表示用']
+
+  // --- 詳細プロフィール ---
+  birthday_on date [not null, note: '生年月日']
+  gender varchar(10) [not null, note: '性別 (例: male, female, other)']
+  postal_code varchar(8) [not null, note: '郵便番号 (ハイフン含む)']
+  address varchar(255) [not null, note: '住所']
+  phone_number varchar(20) [not null, note: '電話番号']
+
+  // --- 監査情報 ---
+  created_at timestamp [default: `now()`, note: 'プロフィール作成日時']
+  updated_at timestamp [note: 'プロフィール更新日時']
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+}
+
+Ref: worker.account_id - account.account_id [delete: cascade]
+
+
+// 家族・子供関連
+Table families {
+  families_id uuid [pk, default: `uuid_generate_v7()`, note: 'アカウントのUUID(v7)はサーバー側で生成']
+  account_id uuid [unique, note: '紐付くaccountのID']
+  name varchar(100) [not null]
+  invite_code varchar(20) [unique, note: '家族招待コード']
+
+  // --- 監査情報 ---
+  created_at timestamp [default: `now()`, note: '家族登録日時']
+  updated_at timestamp [note: '家族更新日時']
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+  
+  Note: '家族グループ'
+}
+
+Table family_members {
+  family_members_id uuid [pk, default: `uuid_generate_v7()`, note: 'アカウントのUUID(v7)はサーバー側で生成']
+  user_id uuid [ref: > user.user_id, not null, note: 'どのユーザーがメンバーか（外部キー: user.user_id）']
+  families_id uuid [ref: > families.families_id, not null, note: 'どの家族グループに所属か（外部キー: families.families_id）']
+  role varchar(20) [default: 'member', note: 'owner/member/guest']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  
+  indexes {
+    (user_id, families_id) [unique, name: 'idx_user_family']
+  }
+  
+  Note: 'ユーザーと家族の関連（多対多）'
+}
+
+Table children {
+  id bigint [primary key, increment]
+  family_id bigint [ref: > families.id, not null]
+  name varchar(100) [not null]
+  birth_date date [note: '誕生日']
+  gender varchar(10) [note: 'boy/girl/other']
+  avatar_url varchar(500) [note: '子供のプロフィール画像']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  
+  indexes {
+    (family_id)
+  }
+  
+  Note: '子供の基本情報'
+}
+
+// ===========================================
+// 思い出・名言関連
+// ===========================================
+
+Table memories {
+  id bigint [primary key, increment]
+  family_id bigint [ref: > families.id, not null]
+  child_id bigint [ref: > children.id, note: '特定の子供に関連する場合']
+  user_id bigint [ref: > users.id, not null, note: '作成者']
+  title varchar(200) [not null]
+  content text [note: '思い出の詳細']
+  memory_date date [not null, note: '思い出の日付']
+  location varchar(100) [note: '場所']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  
+  indexes {
+    (family_id, memory_date) [name: 'idx_family_date']
+    (child_id) [name: 'idx_child']
+    (user_id) [name: 'idx_user']
+  }
+  
+  Note: '思い出の記録'
+}
+
+Table quotes {
+  id bigint [primary key, increment]
+  family_id bigint [ref: > families.id, not null]
+  child_id bigint [ref: > children.id, not null]
+  user_id bigint [ref: > users.id, not null, note: '記録者']
+  quote_text text [not null, note: '子供の発言・名言']
+  context text [note: '状況・エピソードの説明']
+  quote_date date [not null, note: '発言した日付']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  
+  indexes {
+    (family_id, quote_date) [name: 'idx_family_quote_date']
+    (child_id) [name: 'idx_child_quote']
+    (user_id) [name: 'idx_user_quote']
+  }
+  
+  Note: '子供の名言・エピソード'
+}
+
+// ===========================================
+// メディア関連
+// ===========================================
+
+Table media {
+  id bigint [primary key, increment]
+  memory_id bigint [ref: > memories.id, note: '思い出に紐づく場合']
+  quote_id bigint [ref: > quotes.id, note: '名言に紐づく場合']
+  file_url varchar(500) [not null, note: 'Firebase Storage URL']
+  file_type varchar(20) [not null, note: 'image/video']
+  file_size bigint [note: 'ファイルサイズ（bytes）']
+  width integer [note: '画像幅（pixel）、動画の場合はnull']
+  height integer [note: '画像高さ（pixel）、動画の場合はnull']
+  thumbnail_url varchar(500) [note: 'サムネイル画像URL（動画の場合）']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+  
+  indexes {
+    (memory_id) [name: 'idx_media_memory']
+    (quote_id) [name: 'idx_media_quote']
+  }
+  
+  Note: '写真・動画のメタデータ'
+}
+
