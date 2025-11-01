@@ -1,0 +1,242 @@
+// おぼえてて (remember_me) - データベーススキーマ
+// ER.dbml形式
+
+// ===========================================
+// ユーザー認証関連
+// ===========================================
+
+Table accounts {
+  accounts_id uuid [pk, default: `uuid_generate_v7()`, note: 'アカウントのUUID(v7)はサーバー側で生成']
+  email varchar(255) [unique, not null, note: 'ログイン用のメールアドレス']
+  password_hash varchar(255) [not null, note: 'パスワードのハッシュ値']
+  provider varchar(50) [default: 'email', note: '認証プロバイダー（email/line/google等）']
+  provider_uid varchar(255) [unique, note: '外部認証プロバイダーのユーザーID']
+  remember_created_at timestamp [note: 'ログイン維持開始日時（Devise）']
+  current_sign_in_at timestamp [note: '現在のログイン日時（Devise）']
+  last_sign_in_at timestamp [note: '最終ログイン日時（Devise）']
+  current_sign_in_ip varchar(255) [note: '現在のログインIP（Devise）']
+  last_sign_in_ip varchar(255) [note: '最終ログインIP（Devise）']
+  
+  // --- 監査情報 ---
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+  created_at timestamp [default: `now()`, not null, note: 'アカウント作成日時']
+  updated_at timestamp [not null, note: 'アカウント更新日時']
+  
+  indexes {
+    (email, provider_uid) [unique, name: 'idx_accounts_email_provider']
+  }
+  
+  Note: 'ユーザー認証情報（Devise）'
+}
+
+Table users {
+  users_id uuid [pk, default: `uuid_generate_v7()`, note: 'ユーザーのUUID(v7)はサーバー側で生成']
+  accounts_id uuid [ref: - accounts.accounts_id, unique, not null, note: '紐付くaccountsのID']
+  
+  // --- 基本情報 ---
+  name varchar(100) [not null, note: 'ユーザー名']
+  nickname varchar(50) [note: 'ニックネーム']
+  birth_date date [note: '誕生日']
+  gender varchar(10) [note: '性別（boy/girl/other）']
+  
+  // --- 監査情報 ---
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+  created_at timestamp [default: `now()`, not null, note: 'プロフィール作成日時']
+  updated_at timestamp [not null, note: 'プロフィール更新日時']
+  
+  Note: 'ユーザー基本情報'
+}
+
+// ===========================================
+// 家族・子供関連
+// ===========================================
+
+Table families {
+  families_id uuid [pk, default: `uuid_generate_v7()`, note: '家族のUUID(v7)はサーバー側で生成']
+  family_name varchar(100) [not null, note: '家族名']
+  
+  // --- 監査情報 ---
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+  created_at timestamp [default: `now()`, not null, note: '家族登録日時']
+  updated_at timestamp [not null, note: '家族更新日時']
+  
+  Note: '家族グループ'
+}
+
+Table family_members {
+  family_members_id uuid [pk, default: `uuid_generate_v7()`, note: '家族メンバーのUUID(v7)はサーバー側で生成']
+  users_id uuid [ref: > users.users_id, not null, note: 'どのユーザーがメンバーか（外部キー: users.users_id）']
+  families_id uuid [ref: > families.families_id, not null, note: 'どの家族グループに所属か（外部キー: families.families_id）']
+  
+  // --- 監査情報 ---
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+  created_at timestamp [default: `now()`, not null, note: '家族メンバー登録日時']
+  updated_at timestamp [not null, note: '家族メンバー更新日時']
+  
+  indexes {
+    (users_id, families_id) [unique, name: 'idx_user_family']
+  }
+  
+  Note: 'ユーザーと家族の関連（多対多）'
+}
+
+Table children {
+  children_id uuid [pk, default: `uuid_generate_v7()`, note: '子供のUUID(v7)はサーバー側で生成']
+  families_id uuid [ref: > families.families_id, not null, note: '家族ID（外部キー: families.families_id）']
+  family_members_id uuid [ref: > family_members.family_members_id, not null, note: '家族メンバーID（外部キー: family_members.family_members_id）']
+  
+  // --- 基本情報 ---
+  name varchar(100) [not null, note: '子供の名前']
+  birth_date date [note: '誕生日']
+  gender varchar(10) [note: '性別（boy/girl/other）']
+  color varchar(10) [note: 'イメージカラー']
+  avatar_url varchar(500) [note: '子供のプロフィール画像URL']
+  
+  // --- 監査情報 ---
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+  created_at timestamp [default: `now()`, not null, note: '子供情報作成日時']
+  updated_at timestamp [not null, note: '子供情報更新日時']
+  
+  indexes {
+    (families_id) [name: 'idx_children_family']
+  }
+  
+  Note: '子供の基本情報'
+}
+
+// ===========================================
+// 思い出・名言関連
+// ===========================================
+
+Table memories {
+  memories_id uuid [pk, default: `uuid_generate_v7()`, note: '思い出のUUID(v7)はサーバー側で生成']
+  families_id uuid [ref: > families.families_id, not null, note: '家族ID（外部キー: families.families_id）']
+  children_id uuid [ref: > children.children_id, note: '子供ID（外部キー: children.children_id、任意）']
+  family_members_id uuid [ref: > family_members.family_members_id, note: '作成者ID（外部キー: family_members.family_members_id、任意）']
+  
+  // --- 思い出情報 ---
+  title varchar(200) [not null, note: 'タイトル']
+  memory_date date [not null, note: '思い出の日付']
+  location varchar(100) [note: '場所']
+  quotes_id uuid [ref: - quotes.quotes_id, note: '名言・エピソードID（外部キー: quotes.quotes_id、必須）']
+  media_id uuid [note: '写真・動画のメタデータID（任意）']
+  voice_id uuid [note: '音声のメタデータID（任意）']
+  
+  // --- 監査情報 ---
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+  created_at timestamp [default: `now()`, not null, note: '思い出作成日時']
+  updated_at timestamp [not null, note: '思い出更新日時']
+  
+  indexes {
+    (families_id, memory_date) [name: 'idx_memory_family_date']
+    (children_id) [name: 'idx_memory_child']
+    (family_members_id) [name: 'idx_memory_creator']
+  }
+  
+  Note: '思い出の記録'
+}
+
+Table quotes {
+  quotes_id uuid [pk, default: `uuid_generate_v7()`, note: '名言のUUID(v7)はサーバー側で生成']
+  memories_id uuid [ref: - memories.memories_id, unique, not null, note: '思い出ID（外部キー: memories.memories_id、一対一）']
+  
+  // --- 名言情報 ---
+  quote_text text [not null, note: '子供の発言・名言']
+  quote_date date [not null, note: '発言した日付']
+  
+  // --- 監査情報 ---
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+  created_at timestamp [default: `now()`, not null, note: '名言作成日時']
+  updated_at timestamp [not null, note: '名言更新日時']
+  
+  indexes {
+    (memories_id, quote_date) [name: 'idx_quote_memory_date']
+  }
+  
+  Note: '子供の名言・エピソード（1つの思い出に1つの名言、必須）'
+}
+
+// ===========================================
+// 役割関連
+// ===========================================
+
+Table role {
+  role_id uuid [pk, default: `uuid_generate_v7()`, note: '役割のUUID(v7)はサーバー側で生成']
+  role_name varchar(100) [not null, note: '役割名']
+  
+  // --- 監査情報 ---
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+  created_at timestamp [default: `now()`, not null, note: '役割作成日時']
+  updated_at timestamp [not null, note: '役割更新日時']
+  
+  Note: '役割'
+}
+
+Table family_members_role {
+  family_members_role_id uuid [pk, default: `uuid_generate_v7()`, note: '家族メンバーの役割のUUID(v7)はサーバー側で生成']
+  role_id uuid [ref: > role.role_id, not null, note: '役割ID（外部キー: role.role_id）']
+  family_members_id uuid [ref: - family_members.family_members_id, unique, not null, note: '家族メンバーID（外部キー: family_members.family_members_id、一対一）']
+  
+  // --- 監査情報 ---
+  created_by uuid [not null, note: '作成者のアカウントID']
+  updated_by uuid [not null, note: '更新者のアカウントID']
+  created_at timestamp [default: `now()`, not null, note: '家族メンバーの役割作成日時']
+  updated_at timestamp [not null, note: '家族メンバーの役割更新日時']
+  
+  Note: '家族メンバーの役割（1つの家族メンバーに1つの役割）'
+}
+
+// ===========================================
+// メディア関連
+// ===========================================
+
+Table media {
+  media_id uuid [pk, default: `uuid_generate_v7()`, note: 'メディアのUUID(v7)はサーバー側で生成']
+  memories_id uuid [ref: > memories.memories_id, note: '思い出ID（外部キー: memories.memories_id、任意）']
+  
+  // --- ファイル情報 ---
+  file_url varchar(500) [not null, note: 'Firebase Storage URL']
+  file_type varchar(20) [not null, note: 'ファイルタイプ（image/video）']
+  file_size bigint [note: 'ファイルサイズ（bytes）']
+  width integer [note: '画像幅（pixel）、動画の場合はnull']
+  height integer [note: '画像高さ（pixel）、動画の場合はnull']
+  thumbnail_url varchar(500) [note: 'サムネイル画像URL（動画の場合）']
+  
+  // --- 監査情報 ---
+  created_at timestamp [default: `now()`, not null, note: 'メディア作成日時']
+  updated_at timestamp [not null, note: 'メディア更新日時']
+  
+  indexes {
+    (memories_id) [name: 'idx_media_memory']
+  }
+  
+  Note: '写真・動画のメタデータ（実際のファイルはFirebase Storageに保存、URLのみを管理）'
+}
+
+Table voice {
+  voice_id uuid [pk, default: `uuid_generate_v7()`, note: '音声のUUID(v7)はサーバー側で生成']
+  memories_id uuid [ref: > memories.memories_id, not null, note: '思い出ID（外部キー: memories.memories_id、必須）']
+  
+  // --- ファイル情報 ---
+  file_url varchar(500) [not null, note: 'Firebase Storage URL']
+  file_type varchar(20) [not null, note: 'ファイルタイプ（mp3）']
+  file_size bigint [note: 'ファイルサイズ（bytes）']
+  
+  // --- 監査情報 ---
+  created_at timestamp [default: `now()`, not null, note: '音声作成日時']
+  updated_at timestamp [not null, note: '音声更新日時']
+  
+  indexes {
+    (memories_id) [name: 'idx_voice_memory']
+  }
+  
+  Note: '音声のメタデータ（実際のファイルはFirebase Storageに保存、URLのみを管理）'
+}
